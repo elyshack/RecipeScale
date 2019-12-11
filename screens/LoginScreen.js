@@ -1,11 +1,14 @@
 import React, { Component } from 'react';
-import { StatusBar, View, Image, Text, TextInput, StyleSheet, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView } from 'react-native';
+import { StatusBar, View, Image, Text, TextInput, Dimensions, StyleSheet, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView } from 'react-native';
 import { connect } from 'react-redux';
 import firebase from 'firebase';
 import * as actions from '../redux/actions';
 import Spinner from "../components/Spinner";
 import DynamicInput from "../components/DynamicInput";
 import RButton from "../components/RButton";
+
+
+screen = Dimensions.get('screen');
 
 class LoginScreen extends Component {
     static navigationOptions = {
@@ -87,48 +90,47 @@ class LoginScreen extends Component {
         return (
             <KeyboardAvoidingView behavior='position'>
             <StatusBar barStyle="dark-content"/>
-            <DismissKeyboard style={styles.toplevel}>
+            <DismissKeyboard>
                 <View style={styles.mainContainer}>
-                <View style ={styles.logo}>
-                    {/* <Text style={styles.bigtext}>RecipeScale</Text> */}
-                    <Image style={styles.logoImage} source={require('../assets/logotext.png')}/>
-                    <Text style={styles.smalltext}>@elyshack | @bellsarian</Text>
-                    <Image style={styles.image} source={require('../assets/scalelogo.png')}/>
-                </View>
+                    <View style ={styles.logo}>
+                        <Image style={styles.logoImage} source={require('../assets/logotext.png')}/>
+                        <Text style={styles.smalltext}>@elyshack | @bellsarian</Text>
+                        <Image style={styles.image} source={require('../assets/scalelogo.png')}/>
+                    </View>
 
+                    <View style={[{flex: 1}]}>
                     <View style={styles.formStyle}>
                         <DynamicInput placeholderList={[
                             {placeholder: 'Email',
-                              inputContainerStyle: 'loginInput',
-                              inputStyle: "loginText",
-                              autoCapitalize: "none",
-                              spellCheck: false,
-                              stateLabel: "email",
-                              iconStyle: "MCIcon",
-                              iconName: "email-variant",
-                              iconColor: "white",
-                              iconSize: 22,
-                              onChange: this.handleEmailChange,
-                              textColor: 'white'
-                               },
+                                inputContainerStyle: 'loginInput',
+                                inputStyle: "loginText",
+                                autoCapitalize: "none",
+                                spellCheck: false,
+                                stateLabel: "email",
+                                iconStyle: "MCIcon",
+                                iconName: "email-variant",
+                                iconColor: "white",
+                                iconSize: 22,
+                                onChange: this.handleEmailChange,
+                                textColor: 'white'
+                                },
                             
                             {placeholder: 'Password',
-                              secureTextEntry: true,
-                              inputContainerStyle: 'loginInput',
-                              inputStyle: "loginText",
-                              stateLabel: "password",
-                              returnKeyType: "done",
-                              autoCorrect: false,
-                              autoCapitalize: "none",
-                              iconStyle: "MCIcon",
-                              iconName: "lock",
-                              iconColor: "white",
-                              iconSize: 22,
-                              onChange: this.handlePasswordChange},
+                                secureTextEntry: true,
+                                inputContainerStyle: 'loginInput',
+                                inputStyle: "loginText",
+                                stateLabel: "password",
+                                returnKeyType: "done",
+                                autoCorrect: false,
+                                autoCapitalize: "none",
+                                iconStyle: "MCIcon",
+                                iconName: "lock",
+                                iconColor: "white",
+                                iconSize: 22,
+                                onChange: this.handlePasswordChange},
                             ]}
-                        />
-                        
-                    </View>
+                        />    
+                        </View>
 
                     <Text style={styles.errorTextStyle}>
                         {this.state.error}
@@ -137,7 +139,7 @@ class LoginScreen extends Component {
                     {this.renderButton()} 
                     {this.renderCreateAccount()}
                     </View>
-
+                   </View>
 
                 </View>
             </DismissKeyboard>
@@ -175,29 +177,27 @@ const styles = StyleSheet.create({
     },
     image: {
         width: null,
+        height: Math.floor(screen.height/5),
         resizeMode: 'contain',
-        height: '100%',
         marginBottom: 50
         },
     logo: {
-        flex: 1,
-        textAlign: 'center',
+        flex: 1.5,
+        justifyContent: 'flex-start',
         fontSize: 40,
         fontWeight: 'bold',
         width: null,
         resizeMode: 'contain',
         height: '33%',
-        marginTop: '20%',
-        marginBottom: '5%'},
-        logoImage: {
-            textAlign: 'center',
-            fontSize: 40,
-            fontWeight: 'bold',
-            width: null,
-            resizeMode: 'contain',
-            height: '33%',
-            marginTop: '20%',
-            marginBottom: '5%'},
+        marginBottom: '5%',
+        // borderWidth: 3,
+        // borderColor: 'green'
+    },
+    logoImage: {
+        alignSelf: 'center',
+        width: Math.floor(screen.width/1.5),
+        resizeMode: 'contain',
+    },
 
     testBorder: {
         borderColor: '#0ac45555',

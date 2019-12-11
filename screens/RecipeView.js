@@ -707,7 +707,11 @@ const button = StyleSheet.create({
        borderColor: 'white',
        borderWidth: 1,
        justifyContent: 'center',
-       alignContent: 'center'
+       alignContent: 'center',
+       shadowColor: '#000',
+       shadowOffset: { width: 0, height: 3 },
+       shadowOpacity: 0.3,
+       shadowRadius: 2,
     },
     buttonText: {
         textAlign: 'center',

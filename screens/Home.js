@@ -48,9 +48,7 @@ class HomeScreen extends Component {
         return (
            <View style={styles.toplevel}>
             <StatusBar barStyle="dark-content"/>
-            <View style={styles.titleBar}>
-            <Text style={styles.bigtext}>RecipeScale</Text>
-            </View>
+            <Image style={styles.logoImage} source={require('../assets/logotext.png')}/>
 
             <View style={styles.optionGroup}>
                 <TouchableOpacity style={styles.optionBar} onPress={this.navigateToNewRecipe}>
@@ -91,8 +89,15 @@ const styles = StyleSheet.create({
     //     color="#36C8EE"
     // },
     optionGroup: {
+        flex: 1.5,
         height: '25%',
-        justifyContent: 'space-between'
+        justifyContent: 'flex-start'
+    },
+    logoImage: {
+        flex: 1,
+        alignSelf: 'center',
+        width: Math.floor(screen.width/1.5),
+        resizeMode: 'contain',
     },
     optionBar: {
         alignSelf: 'center',
@@ -100,6 +105,7 @@ const styles = StyleSheet.create({
         alignContent: 'center',
         justifyContent: 'flex-start',
         paddingHorizontal: 20,
+        paddingVertical: 20,
         width: '50%'
     },
     logOutBar: {
