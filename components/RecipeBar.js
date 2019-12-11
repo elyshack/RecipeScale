@@ -12,7 +12,7 @@ class RecipeBar extends Component {
   constructor(props) {
       super(props);
 
-      this.state = { isOn: props.isOn, name: props.name, date: props.date, recipe: props.recipe, recipeKey: props.key, onPress: props.onPress };
+      this.state = { onLongPress: props.onLongPress, isOn: props.isOn, name: props.name, date: props.date, recipe: props.recipe, recipeKey: props.key, onPress: props.onPress };
 };
 
         // onLongPress = async () => {
@@ -31,7 +31,7 @@ class RecipeBar extends Component {
     render() {
         console.log("KEY: " +this.state.recipeKey);
         return (
-            <TouchableOpacity  onPress={this.state.onPress} onLongPress={this.onLongPress} style={styles.bar}>
+            <TouchableOpacity  onPress={this.state.onPress} onLongPress={this.state.onLongPress} style={styles.bar}>
               <Text style={styles.nameText}>{this.state.name}</Text>
               <Text style={styles.dateText}>{this.state.date}</Text>
             </TouchableOpacity>

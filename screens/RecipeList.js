@@ -21,13 +21,23 @@ class RecipeList extends Component {
     constructor(props) {
         super(props);
     
+        this.toggleDeleteRecipeModal = this.toggleDeleteRecipeModal.bind(this);
         this.navToRecipeView = this.navToRecipeView.bind(this);
       }
 
 
 
     // STATE. Storing opacity value
-    state = {data: [], tempRecipeName: '', newRecipeModalVisible: false, userId: null, opacityValue: new Animated.Value(0), distanceValue: new Animated.Value(0)}
+    state = {
+        keyToDelete: '',
+        deleteRecipeModalVisible: false,
+        data: [],
+        tempRecipeName: '',
+        newRecipeModalVisible: false,
+        userId: null,
+        opacityValue: new Animated.Value(0),
+        distanceValue: new Animated.Value(0)
+    }
 
 
     loadFromDatabase = async () => {
@@ -106,11 +116,43 @@ class RecipeList extends Component {
         console.log(this.state.userId);
     }
 
+    // TOGGLE DELETION MODAL
+    toggleDeleteRecipeModal = (key) => {
+        console.log("delete recipe modal called");
+        this.setState({keyToDelete: key, deleteRecipeModalVisible: !this.state.deleteRecipeModalVisible});
+    }
+
+    // DELETE RECIPE
+    deleteRecipe = async () => {
+        let recipeKey = this.state.keyToDelete;
+        let userId = await firebase.auth().currentUser.uid;        
+
+        console.log("Delete recipe calld");
+        userId = await firebase.auth().currentUser.uid;        
+ 
+        try{
+            console.log("Trying delete")
+            await firebase.database().ref("/users/"+userId+"/recipes/"+recipeKey).remove();
+        }  catch{(error) => {
+            console.log(error);
+        }}
+        this.setState({deleteRecipeModalVisible: false});
+        this.loadFromDatabase();
+    }
+
+    // CANCELED DELETE MODAL
+    cancelDelete = () => {
+        this.setState({deleteRecipeModalVisible: false});
+    }
+
     renderRecipesList = () =>{
         return (
-            this.state.data.map((c, index) =>
+            this.state.data.slice(0).reverse().map((c, index) =>
             <View key={index}>
-                <RecipeBar onPress={() => this.navToRecipeView(c.key, c.name)} name={c.name} date={c.date} key={c.key} />
+                <RecipeBar
+                onPress={() => this.navToRecipeView(c.key, c.name)} name={c.name} date={c.date} key={c.key} 
+                onLongPress={()=>this.toggleDeleteRecipeModal(c.key)}
+                />
             </View>
         ));
     }
@@ -177,6 +219,7 @@ class RecipeList extends Component {
                     </View>
             </TouchableOpacity>
 
+                    {/*   NEW RECIPE MODAL  */}
             <Modal isVisible={this.state.newRecipeModalVisible}l>
             <DismissKeyboard>
             <KeyboardAvoidingView style={styles.modalContainer}>
@@ -185,6 +228,7 @@ class RecipeList extends Component {
                     <TextInput
                     style={styles.newIngInput}
                     placeholder="Recipe Name"
+                    placeholderTextColor= "#d4d4d4"
                     onChangeText = {text => this.changeRecipeName(text)}
                     value = {this.state.tempRecipeName}
                     />
@@ -201,6 +245,23 @@ class RecipeList extends Component {
                 </KeyboardAvoidingView>
                 </DismissKeyboard>
             </Modal>
+
+
+                {/* DELETE RECIPE MODAL */}
+                <Modal isVisible={this.state.deleteRecipeModalVisible} >
+                    <View style={[styles.modalContainer, {justifyContent: 'space-around'}]}>
+                        <Text style={styles.smalltext}>Delete Recipe?</Text>
+                        <View style={styles.buttons}>
+                        <TouchableOpacity style={button.buttonContainer} onPress={this.deleteRecipe}>
+                                <Text style={styles.smalltext}>Yes</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={button.buttonContainer} onPress={this.cancelDelete}>
+                                <Text style={styles.smalltext}>No</Text>
+                        </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
+
            </View>
         )
     }
@@ -223,9 +284,20 @@ const styles = StyleSheet.create({
         backgroundColor: "#445689"
     },
     newIngInput: {
-        flex:1,
+        height: Math.floor(screen.height/20),
+        width: Math.floor(screen.width/2),
         textAlign: 'center',
-        color: 'white'
+        color: 'white',
+        borderColor: 'white',
+        borderWidth: 1,
+        borderRadius: 5
+    },
+    buttons: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        height: '20%',
+        width: '98%',
+        marginBottom: 5
     },
     modalContainer: {
         height: "40%",
@@ -326,7 +398,7 @@ const styles = StyleSheet.create({
         borderColor: '#0ac45555',
         borderWidth: 2 },
     formStyle: {
-        flex: 2,
+        flex: 3,
         justifyContent: 'space-around', },
     input2: {
         height: 50,

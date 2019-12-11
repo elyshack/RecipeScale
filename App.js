@@ -12,7 +12,7 @@ import RegistrationScreen from './screens/RegistrationScreen';
 import HomeScreen from './screens/Home';
 import RecipeList from './screens/RecipeList';
 import RecipeView from './screens/RecipeView';
-
+import Settings from './screens/Settings';
 
 export default class App extends React.Component {
   componentWillMount() {
@@ -56,6 +56,9 @@ export default class App extends React.Component {
           screen: RecipeView,
           navigationOptions: {
             headerMode: 'none'
+          },
+        Settings: {
+          screen: Settings
           }
         },
       }

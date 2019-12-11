@@ -9,56 +9,39 @@ class IngredientBar extends Component {
   constructor(props) {
       super(props);
 
-      this.state = { deleteModalVisible: false, recipeKey: props.recipeKey, ingredientKey: props.ingredientKey, longPress: props.onLongPress, isOn: props.isOn, name: props.name, quantity: props.quantity, unit: props.unit};
+      this.state = { onPress: props.onPress, deleteModalVisible: false, recipeKey: props.recipeKey, ingredientKey: props.ingredientKey, longPress: props.longPress, isOn: props.isOn, name: props.name, quantity: props.quantity, unit: props.unit};
 };
 
-        onLongPress = async () => {
-            this.setState({deleteModalVisible: true});
+        // onLongPress = async () => {
+        //     this.setState({deleteModalVisible: true});
            
-            // let user = await firebase.auth().currentUser.uid;
-            // try{
-            //     console.log("Trying delete")
-            //     await firebase.database().ref("/users/"+user+"/recipes/"+props.recipeKey).remove();
-            // }  catch{(error) => {
-            //     console.log(error);
-            // }}
-        }
+        //     // let user = await firebase.auth().currentUser.uid;
+        //     // try{
+        //     //     console.log("Trying delete")
+        //     //     await firebase.database().ref("/users/"+user+"/recipes/"+props.recipeKey).remove();
+        //     // }  catch{(error) => {
+        //     //     console.log(error);
+        //     // }}
+        // }
 
-        deleteIngredient = async () => {
-            
-            console.log("Delete recipe calld");
-            userId = await firebase.auth().currentUser.uid;        
-            console.log("ingkey: " + this.state.ingredientKey);
-            console.log("recikey: " + this.state.recipeKey);
-            try{
-                console.log("Trying delete")
-                await firebase.database().ref("/users/"+userId+"/recipes/"+this.state.recipeKey+"/ingredients/"+this.state.ingredientKey).remove();
-            }  catch{(error) => {
-                console.log(error);
-            }}
-            this.setState({deleteModalVisible: false});
-        }
-
-        cancelDeletion = () => {
-            this.setState({deleteModalVisible: false});
-        }
+        
         
 
     render() {
         return (
             <View>
-            <TouchableOpacity onLongPress={this.onLongPress} style={styles.bar}>
+            <TouchableOpacity onPress={this.state.onPress} onLongPress={this.state.longPress} style={styles.bar}>
               <Text style={styles.nameText}>{this.state.name}</Text>
               <Text style={styles.quantityText}>{this.state.quantity}</Text>
               <Text style={styles.unitText}>{this.state.unit}</Text>
             </TouchableOpacity>
-            <Modal isVisible={this.state.deleteModalVisible} style={styles.modal}>
+            {/* <Modal isVisible={this.state.deleteModalVisible} style={styles.modal}>
                 <View>
                     <Text>Delete Ingredient?</Text>
                     <TouchableOpacity onPress={this.deleteIngredient}><Text>Yes</Text></TouchableOpacity>
                     <TouchableOpacity onPress={this.cancelDeletion}><Text>No</Text></TouchableOpacity>
                 </View>
-            </Modal>
+            </Modal> */}
             </View>
         );
     }

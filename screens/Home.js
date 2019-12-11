@@ -30,6 +30,11 @@ class HomeScreen extends Component {
         this.props.navigation.navigate('RecipeList', {modal: false});
     }
 
+    navigateToSettings = () => {
+        console.log("YOINKERONIES");
+        this.props.navigation.navigate('Settings');
+    }
+
     navigateToNewRecipe = () => {
         this.props.navigation.navigate('RecipeList', {modal: true});
     }
@@ -58,7 +63,9 @@ class HomeScreen extends Component {
                     <Text style={styles.smalltext}>Recipe List</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.optionBar}>
+                <TouchableOpacity style={styles.optionBar}
+                    onPress={this.navigateToSettings}
+                    >
                     <Icon name='settings' color="white"/>
                     <Text style={styles.smalltext}>Settings</Text>
                 </TouchableOpacity>

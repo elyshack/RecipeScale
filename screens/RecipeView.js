@@ -28,7 +28,11 @@ class RecipeView extends Component {
     static navigationOptions = {
         header: null,
     };
-
+    constructor () {
+        super();
+        this.onLongPress = this.onLongPress.bind(this);
+        this.openEditScaleModal = this.openEditScaleModal.bind(this);
+      }
     
     state = {
         data: [], 
@@ -39,10 +43,20 @@ class RecipeView extends Component {
         leftColor: 'grey',
         rightColor: 'white',
         recipeKey: '',
+
         newIngredientIsVisible: false,
+        deleteModalVisible: false,
+        editScaleModalVisible: false,
+
         tempNewIng: '',
         tempNewQuantity: '',
-        tempNewUnit: ''
+        tempNewUnit: '',
+        ingredientToDelete: '',
+        changeIndex: null,
+        changeIngredientKey: '',
+
+        originalIngQuantity: null,
+        newIngQuantity: null
     }
 
 
@@ -83,10 +97,11 @@ class RecipeView extends Component {
 
     }
 
-    componentWillMount = async () => {
+    componentWillMount = () => {
         this.loadFromDatabase();
     }
 
+    // component did mount initiates animations
     componentDidMount = () => {
         Animated.loop( // Starts overall animation loop, with other nested animations inside
             Animated.parallel([ //Animates multiple animations at once
@@ -111,18 +126,21 @@ class RecipeView extends Component {
         ).start();
     }
 
-    // navigateToRecipeList = () => {
-    //     this.props.navigation.navigate('RecipeList');
-    // }
-
-
+    /***************** MODAL TOGGLES *************************/
     toggleNewIngredientModal = () => this.setState({ newIngredientIsVisible: !this.state.newIngredientIsVisible });
+    toggleDeleteIngredientModal = () => this.setState({ deleteModalVisible: !this.state.deleteModalVisible });
+    toggleEditScaleModal = () => this.setState({ editScaleModalVisible: !this.state.editScaleModalVisible });
+    /***************** END MODAL TOGGLES *********************/
+
+
 
 
     returnUserUID = async () => {
         console.log(this.state.userId);
     }
 
+
+    // RENDER INGREDIENTS *************
     renderIngredients = () => {
         return (
             this.state.data.map((c, index) =>
@@ -132,12 +150,18 @@ class RecipeView extends Component {
                     quantity={c.quantity}
                     unit={c.unit}
                     ingredientKey={c.key}
-                    recipeKey = {this.props.navigation.getParam('key')}
+                    onPress={() => this.openEditScaleModal(index, c.quantity, c.key)}
+                    longPress={() => this.onLongPress(c.key)}
+                    recipeKey={this.props.navigation.getParam('key')
+                }
                     />
             </View>
         ));
     }
+    // END INGREDIENT RENDER ************
 
+
+    //**************** BEGIN INGREDIENT CREATION BLOCK ************** */
     // Handle ingredient name input on new ingredient modal
     newIngChange = (name) =>{
         console.log(name);
@@ -165,12 +189,8 @@ class RecipeView extends Component {
     // Handle create new ingredient
     createIngredient = async () =>{
         let obj = {name: this.state.tempNewIng, quantity: this.state.tempNewQuantity, unit: this.state.tempNewUnit};
-
-            // TODO actually make this post to comment thread
         
             let recipeKey = this.props.navigation.getParam('key');        
-            let recipeName = this.props.navigation.getParam('name');
-
             let userId = await firebase.auth().currentUser.uid;    
     
             try{
@@ -183,8 +203,44 @@ class RecipeView extends Component {
             this.newIngCancel();
             this.loadFromDatabase();
     }
+//*****************END INGREDIENT CREATION BLOCK ************************ */
 
 
+//*******************BEGIN INGREDIENT DELETE BLOCK ********************* */
+    // Ingredient Longpress
+    onLongPress = (ingredientKey) => {
+        console.log("Long press");
+        this.setState({ingredientToDelete: ingredientKey});
+        this.toggleDeleteIngredientModal();
+    }
+
+    // Delete a given ingredient from recipe
+    deleteIngredient = async () => {
+        let recipeKey = this.props.navigation.getParam('key');        
+        let userId = await firebase.auth().currentUser.uid;        
+
+        console.log("Delete recipe calld");
+        userId = await firebase.auth().currentUser.uid;        
+        console.log("ingkey: " + this.state.ingredientToDelete);
+        console.log("recikey: " + recipeKey);
+        try{
+            console.log("Trying delete")
+            await firebase.database().ref("/users/"+userId+"/recipes/"+recipeKey+"/ingredients/"+this.state.ingredientToDelete).remove();
+        }  catch{(error) => {
+            console.log(error);
+        }}
+        this.setState({deleteModalVisible: false});
+        this.loadFromDatabase();
+    }
+
+    cancelDeletion = () => {
+        this.setState({deleteModalVisible: false});
+    }
+//*******************END INGREDIENT DELETE BLOCK ********************* */
+
+
+
+//********************* SCALING/EDITING BLOCK ************************/
     // Handle Toggle Switch
     onToggle = (value) =>{
         this.setState({isOn: value});
@@ -196,21 +252,122 @@ class RecipeView extends Component {
         }
     }
 
+// Handle Modal Opening
+openEditScaleModal = (index, quantity, key) => {
+    console.log("INDEX BOIYS: " + index);
+    console.log("quantity tity: " + quantity);
+    this.setState({originalIngQuantity: quantity, changeIndex: index, changeIngredientKey: key});
+    this.toggleEditScaleModal();
+}
+
+// Set state to new ingredient quantity
+handleIngredientChangeText = (quantity) => {
+    this.setState({newIngQuantity: quantity});
+}
+
+// Handle ingredient change/scale modal cancel
+handleIngChangeCancel = () =>{
+    this.setState({originalIngQuantity: null, newIngQuantity: null, changeIngredientKey: null, editScaleModalVisible: false});
+}
+
+// Rounding to specific decimal place function
+ round(value, decimals) {
+    return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
+   }   
+
+
+// Handle Editing/Scaling
+handleEditScale = async () => {
+
+
+
+        // ****** SCALING ******
+    if (!this.state.isOn){
+        originalQuan = parseFloat(this.state.originalIngQuantity);
+        newQuan = parseFloat(this.state.newIngQuantity);
+        
+        let ratio = originalQuan/newQuan;
+
+        for (let i = 0; i < this.state.data.length; i++){
+            newQuantity = parseFloat(this.state.data[i].quantity) / ratio;
+            this.state.data[i].quantity = newQuantity;
+        }
+
+        userId = await firebase.auth().currentUser.uid;        
+        let recipeKey = this.props.navigation.getParam('key');        
+
+        try{
+            await firebase.database().ref("/users/"+userId+"/recipes/"+recipeKey+"/ingredients").remove();
+        }catch{(error)=>{
+            console.log(error);
+        }}
+
+        try {
+        for (let i = 0; i< this.state.data.length; i++){
+            newQuan = this.round(this.state.data[i].quantity, 1);
+            let obj = {name: this.state.data[i].name, quantity: newQuan, unit: this.state.data[i].unit};
+            await firebase.database().ref("/users/"+userId+"/recipes/"+recipeKey+"/ingredients").push(obj);
+        } 
+        }catch{(error)=>{
+            console.log(error);
+        }}
+        this.setState({originalIngQuantity: null, newIngQuantity: null, changeIngredientKey: null});
+        this.loadFromDatabase();
+        this.toggleEditScaleModal();
+    }
+
+
+        // ****** EDITING *******
+    if (this.state.isOn){
+        userId = await firebase.auth().currentUser.uid;        
+        let recipeKey = this.props.navigation.getParam('key');   
+
+        console.log("yellooooooooo");
+        try {
+            await firebase.database().ref("/users/"+userId+"/recipes/"+recipeKey+"/ingredients/"+this.state.changeIngredientKey).update({quantity: this.state.newIngQuantity});
+        }catch{(error)=>{
+                console.log(error);
+            }}
+
+        this.setState({originalIngQuantity: null, newIngQuantity: null, changeIngredientKey: null});
+        this.loadFromDatabase();
+        this.toggleEditScaleModal();
+    }
+
+}
+
+
+
+
+
+
+
     render() {
         return (
             <View style={styles.toplevel}>
             <StatusBar barStyle="light-content"/>
             <View style={styles.titleBox}>
                     <View style={{flex: 1}}>
-                        <Animated.Text style={[{color: 'white', fontWeight:'bold' , fontSize: 20, opacity: this.state.opacityValue}, {left: this.state.distanceValue, top: '46%'}]}>
+                        <Animated.Text style={[{color: 'white', fontWeight:'bold' , fontSize: 15, opacity: this.state.opacityValue}, {left: this.state.distanceValue, top: '46%'}]}>
                             > > >
                         </Animated.Text>
 
                     </View>
-                <Text style={[styles.bigtext]}>{this.state.name}</Text>
+                <View style={styles.titleTextBox}>
+                    <Text 
+                    adjustsFontSizeToFit={true}
+                    numberOfLines={1}
+                    style={[styles.bigtext]}>
+                        {this.state.name}
+                    </Text>
+                </View>
                 <View style={{flex: 1}}/>
             </View>
-
+            <View style={styles.bar}>
+             <Text style={styles.text1}>Ingredient</Text>
+             <Text style={styles.text2}>Amount</Text>
+             <Text style={styles.text3}>Unit</Text>
+            </View>
             <ScrollView style={styles.scrollView}>
 
             {this.renderIngredients()}
@@ -230,18 +387,17 @@ class RecipeView extends Component {
                     <Text style={[styles.smalltext, {color: this.state.rightColor}]}>Edit</Text>      
                 </View>
             </View>
-            
 
-                   
+                   {/* NEW INGREDIENT MODAL */}
             <Modal isVisible={this.state.newIngredientIsVisible}>
             <DismissKeyboard>
-
             <KeyboardAvoidingView style={styles.modalContainer}>
                 <Text style={styles.smalltext}>Add Ingredient</Text>
                     <View style={styles.formStyle}>
                     <TextInput
                     style={styles.newIngInput}
                     placeholder="Ing. Name"
+                    placeholderTextColor='#dedede'
                     onChangeText = {text => this.newIngChange(text)}
                     value = {this.state.tempNewIng}
                     />
@@ -249,6 +405,7 @@ class RecipeView extends Component {
                     style={styles.newIngInput}
                     keyboardType="numeric"
                     placeholder="Quantity"
+                    placeholderTextColor='#dedede'
                     onChangeText = {text => this.newQuantityChange(text)}
                     value = {this.state.tempNewQuantity}
                     autoCapitalize = 'none'
@@ -256,6 +413,7 @@ class RecipeView extends Component {
                     <TextInput
                     style={styles.newIngInput}
                     placeholder="Unit"
+                    placeholderTextColor='#dedede'
                     onChangeText = {text => this.newUnitChange(text)}
                     value = {this.state.tempNewUnit}
                     autoCapitalize = 'none'
@@ -272,8 +430,51 @@ class RecipeView extends Component {
 
                 </KeyboardAvoidingView>
                 </DismissKeyboard>
-
             </Modal>
+
+                {/* DELETE INGREDIENT MODAL */}
+            <Modal isVisible={this.state.deleteModalVisible} >
+                <View style={[styles.modalContainer, {justifyContent: 'space-around'}]}>
+                    <Text style={styles.smalltext}>Delete Ingredient?</Text>
+                    <View style={styles.buttons}>
+                    <TouchableOpacity style={button.buttonContainer} onPress={this.deleteIngredient}>
+                            <Text style={styles.smalltext}>Yes</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={button.buttonContainer} onPress={this.cancelDeletion}>
+                            <Text style={styles.smalltext}>No</Text>
+                    </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+
+
+            {/* EDIT SCALE MODAL */}
+            <Modal isVisible={this.state.editScaleModalVisible} >
+                <View style={[styles.modalContainer, {justifyContent: 'space-around'}]}>
+                <Text style={styles.smalltext}>Change Ingredient Amount</Text>
+                <View style={styles.formStyle}>
+                    <TextInput
+                    style={styles.newIngInput}
+                    placeholder="New Quantity"
+                    placeholderTextColor='#dedede'
+                    onChangeText = {text => this.handleIngredientChangeText(text)}
+                    value = {this.state.newIngQuantity}
+                    />
+                </View>
+
+
+                    <View style={styles.buttons}>
+                    <TouchableOpacity style={button.buttonContainer} onPress={this.handleEditScale}>
+                            <Text style={styles.smalltext}>Save</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={button.buttonContainer} onPress={this.handleIngChangeCancel}>
+                            <Text style={styles.smalltext}>Cancel</Text>
+                    </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
            </View>
         )
     }
@@ -289,6 +490,52 @@ const DismissKeyboard = ({children}) => (
 
 
 const styles = StyleSheet.create({
+    bar: {
+        alignSelf: 'center',
+        backgroundColor: "#445689",
+        flexDirection: 'row',
+        alignContent: 'center',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: screen.width-20,
+        height: Math.floor(screen.height/20),
+        marginVertical: 5,
+        marginHorizontal: 5,
+        borderRadius: 10,
+        borderWidth: 3,
+        borderColor: 'white'
+    },
+    text1: {
+        textAlign: 'center',
+        paddingLeft: 10,
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 14,
+        paddingRight: 10,
+        flex: 1,
+        textAlign: 'left'
+
+    },
+    text2: {
+        textAlign: 'center',
+        paddingLeft: 10,
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 14,
+        paddingRight: 10,            
+        flex: 1,
+        textAlign: 'center'
+    },
+    text3: {
+        textAlign: 'center',
+        paddingLeft: 10,
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 14,
+        paddingRight: 10,
+        flex: 1,
+        textAlign: 'right'
+    },
     newIngInput: {
         flex:1,
         textAlign: 'center',
@@ -308,6 +555,9 @@ const styles = StyleSheet.create({
         marginTop: 20,
         marginBottom: 30,
         backgroundColor: "#445689"
+    },
+    titleTextBox: {
+        width: Math.floor((screen.width/5)*3)
     },
     bottomSection: {
         height: '11%',
